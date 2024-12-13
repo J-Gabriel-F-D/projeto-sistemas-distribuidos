@@ -1,5 +1,6 @@
 import socket
 import threading
+import os
 
 # Lista para armazenar os sockets dos clientes conectados
 clients = []
@@ -10,20 +11,55 @@ def handle_client(client_socket, client_address):
     clients.append(client_socket)
     try:
         while True:
-            # Receber a mensagem
-            message = client_socket.recv(1024).decode('utf-8')
-            if not message:
-                # Finaliza a conexão se o cliente encerrar
+            # Receber a mensagem ou comando
+            data = client_socket.recv(1024).decode('utf-8')
+            if not data:
                 print(f"Cliente {client_address} desconectado.")
                 break
-            print(f"Mensagem recebida de {client_address}: {message}")
-            # Redirecionar a mensagem para todos os outros clientes
-            broadcast_message(message, client_socket)
+
+            # Verificar se é um comando de envio de arquivo
+            if data.startswith("UPLOAD"):
+                _, filename, filesize = data.split("|")
+                filesize = int(filesize)
+                receive_file(client_socket, filename, filesize)
+            elif data.startswith("DOWNLOAD"):
+                _, filename = data.split("|")
+                send_file(client_socket, filename)
+            else:
+                print(f"Mensagem recebida de {client_address}: {data}")
+                # Redirecionar a mensagem para todos os outros clientes
+                broadcast_message(data, client_socket)
     except ConnectionResetError:
         print(f"Cliente {client_address} desconectado abruptamente.")
     finally:
         clients.remove(client_socket)
         client_socket.close()
+
+# Função para receber arquivos enviados por um cliente
+def receive_file(client_socket, filename, filesize):
+    with open(f"shared_{filename}", "wb") as f:
+        received_bytes = 0
+        while received_bytes < filesize:
+            data = client_socket.recv(1024)
+            if not data:
+                break
+            f.write(data)
+            received_bytes += len(data)
+    print(f"Arquivo {filename} recebido e salvo como shared_{filename}.")
+
+# Função para enviar arquivos a um cliente
+def send_file(client_socket, filename):
+    if not os.path.exists(f"shared_{filename}"):
+        client_socket.send("ERROR: File not found".encode('utf-8'))
+        return
+
+    filesize = os.path.getsize(f"shared_{filename}")
+    client_socket.send(f"FILE|{filename}|{filesize}".encode('utf-8'))
+
+    with open(f"shared_{filename}", "rb") as f:
+        while chunk := f.read(1024):
+            client_socket.send(chunk)
+    print(f"Arquivo {filename} enviado ao cliente.")
 
 # Função para redirecionar a mensagem para todos os clientes conectados
 def broadcast_message(message, sender_socket):
