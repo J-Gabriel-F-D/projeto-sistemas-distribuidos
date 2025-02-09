@@ -91,7 +91,7 @@ def main():
         args = command[1:]
 
         if cmd == "HELP":
-            print("Commands: \nJOIN <server_ip>;\nREFRESH <server_ip>;\nSEARCH <server_ip> <filename>;\nGET <client_ip> <filename> <offset_start> [offset_end];\nLEAVE <server_ip>;\nEXIT\n")
+            print("Commands: \nJOIN <your_ip>;\nREFRESH <server_ip>;\nSEARCH <server_ip> <filename>;\nGET <client_ip> <filename> <offset_start> [offset_end];\nLEAVE <server_ip>;\nEXIT\n")
         elif cmd == "JOIN" and len(args) == 1:
             join_server(args[0])
         elif cmd == "REFRESH" and len(args) == 1:
