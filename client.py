@@ -124,6 +124,21 @@ def start_file_server():
 def leave_server(server_ip):
     response = send_request(server_ip, "LEAVE\n")
     print(response)
+
+
+def list_files(server_ip):
+    """
+    Solicita ao servidor a lista de arquivos disponíveis e a exibe.
+    """
+    response = send_request(server_ip, "LISTALLFILES\n")
+    if response == "NOFILES":
+        print("[INFO] No files available on the server.")
+    else:
+        print("Files available on the server:")
+        for line in response.split("\n"):
+            if line:  # Ignora linhas vazias
+                print(f"- {line}")
+
 def main():
     os.system('cls' if os.name == 'nt' else 'clear')
     print("Welcome to the File Sharing Application!\n")
@@ -137,7 +152,8 @@ def main():
             print("3 - SEARCH")
             print("4 - GET")
             print("5 - LEAVE")
-            print("6 - EXIT")
+            print("6 - LIST FILES")
+            print("7 - EXIT")
             choice = input("Enter the number of your choice: ").strip()
 
             # Processa a escolha do usuário
@@ -156,6 +172,7 @@ def main():
                 filename = input("Enter the filename to search: ").strip()
                 search_file(server_ip, filename)
                 input("\nPress Enter to continue...")
+
             elif choice == "4":  # GET
                 client_ip = input("Enter the client IP to download from: ").strip()
                 filename = input("Enter the filename to download: ").strip()
@@ -166,18 +183,25 @@ def main():
                 else:
                     get_file(client_ip, filename, offset_start)
                 input("\nPress Enter to continue...")
+
             elif choice == "5":  # LEAVE
                 server_ip = input("Enter the server IP to leave: ").strip()
                 leave_server(server_ip)
                 input("\nPress Enter to continue...")
-            elif choice == "6":  # EXIT
-                print("[INFO] Exiting the application. Goodbye!")
-                break
-            else:
-                print("[ERROR] Invalid choice. Please select a number between 1 and 6.")
+
+            elif choice == "6":  # LIST FILES
+                server_ip = input("Enter the server IP to list files: ").strip()
+                list_files(server_ip)
                 input("\nPress Enter to continue...")
 
-            
+            elif choice == "7":  # EXIT
+                print("[INFO] Exiting the application. Goodbye!")
+                break
+
+            else:
+                print("[ERROR] Invalid choice. Please select a number between 1 and 7.")
+                input("\nPress Enter to continue...")
+
             os.system('cls' if os.name == 'nt' else 'clear')
         except Exception as e:
             print(f"[ERROR] An error occurred: {e}")
