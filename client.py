@@ -124,32 +124,65 @@ def start_file_server():
 def leave_server(server_ip):
     response = send_request(server_ip, "LEAVE\n")
     print(response)
-
 def main():
-    while True:
-        command = input("Enter command (help for list): ").strip().split()
-        if not command:
-            continue
-        cmd = command[0].upper()
-        args = command[1:]
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print("Welcome to the File Sharing Application!\n")
 
-        if cmd == "HELP":
-            print("Commands: \nJOIN <your_ip>;\nREFRESH <server_ip>;\nSEARCH <server_ip> <filename>;\nGET <client_ip> <filename> <offset_start> [offset_end];\nLEAVE <server_ip>;\nEXIT\n")
-        elif cmd == "JOIN" and len(args) == 1:
-            join_server(args[0])
-        elif cmd == "REFRESH" and len(args) == 1:
-            refresh_list(args[0])
-        elif cmd == "SEARCH" and len(args) == 2:
-            search_file(args[0], args[1])
-        elif cmd == "GET" and len(args) in [3, 4]:
-            get_file(*args)
-        elif cmd == "LEAVE" and len(args) == 1:
-            leave_server(args[0])
-        elif cmd == "EXIT":
-            print("[INFO] Exiting program.")
-            break
-        else:
-            print("[ERROR] Invalid command. Type 'HELP' for command list.")
+    while True:
+        try:
+            # Exibe o menu de opções
+            print("Please select an option:")
+            print("1 - JOIN")
+            print("2 - REFRESH")
+            print("3 - SEARCH")
+            print("4 - GET")
+            print("5 - LEAVE")
+            print("6 - EXIT")
+            choice = input("Enter the number of your choice: ").strip()
+
+            # Processa a escolha do usuário
+            if choice == "1":  # JOIN
+                server_ip = input("Enter the server IP to join: ").strip()
+                join_server(server_ip)
+                input("\nPress Enter to continue...")
+
+            elif choice == "2":  # REFRESH
+                server_ip = input("Enter the server IP to refresh: ").strip()
+                refresh_list(server_ip)
+                input("\nPress Enter to continue...")
+
+            elif choice == "3":  # SEARCH
+                server_ip = input("Enter the server IP to search: ").strip()
+                filename = input("Enter the filename to search: ").strip()
+                search_file(server_ip, filename)
+                input("\nPress Enter to continue...")
+            elif choice == "4":  # GET
+                client_ip = input("Enter the client IP to download from: ").strip()
+                filename = input("Enter the filename to download: ").strip()
+                offset_start = input("Enter the starting offset: ").strip()
+                offset_end = input("Enter the ending offset (optional, press Enter to skip): ").strip()
+                if offset_end:
+                    get_file(client_ip, filename, offset_start, offset_end)
+                else:
+                    get_file(client_ip, filename, offset_start)
+                input("\nPress Enter to continue...")
+            elif choice == "5":  # LEAVE
+                server_ip = input("Enter the server IP to leave: ").strip()
+                leave_server(server_ip)
+                input("\nPress Enter to continue...")
+            elif choice == "6":  # EXIT
+                print("[INFO] Exiting the application. Goodbye!")
+                break
+            else:
+                print("[ERROR] Invalid choice. Please select a number between 1 and 6.")
+                input("\nPress Enter to continue...")
+
+            
+            os.system('cls' if os.name == 'nt' else 'clear')
+        except Exception as e:
+            print(f"[ERROR] An error occurred: {e}")
+            os.system('cls' if os.name == 'nt' else 'clear')
+            input("\nPress Enter to continue...")
 
 if __name__ == "__main__":
     threading.Thread(target=start_file_server, daemon=True).start()
