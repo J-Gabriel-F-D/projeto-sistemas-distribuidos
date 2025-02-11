@@ -8,7 +8,6 @@ DATA_FILE = 'server_data.json'
 SERVER_PORT = 1234
 
 def load_data():
-    """Carrega os dados do arquivo JSON."""
     with LOCK:
         if not os.path.exists(DATA_FILE):
             return {}
@@ -16,13 +15,11 @@ def load_data():
             return json.load(file)
 
 def save_data(data):
-    """Salva os dados no arquivo JSON."""
     with LOCK:
         with open(DATA_FILE, 'w') as file:
             json.dump(data, file)
 
 def handle_client(client_socket, client_address, data):
-    """Gerencia a comunicação com um cliente conectado."""
     client_ip = client_address[0]
     
     try:
@@ -37,7 +34,6 @@ def handle_client(client_socket, client_address, data):
         client_socket.close()
 
 def process_command(command, args, client_ip, data):
-    """Processa os comandos recebidos do cliente."""
     if command == 'JOIN':
         if client_ip not in data:
             data[client_ip] = []
@@ -81,11 +77,11 @@ def process_command(command, args, client_ip, data):
         return "CLIENTNOTFOUND"
     
     elif command == 'LISTFILES':
-        files = data.get(client_ip, [])
-        return "\n".join(f"{file['filename']} {file['size']}" for file in files) if files else "NOFILES"
-    elif command == 'LISTALLFILES':
+        # files = data.get(client_ip, [])
+        # return "\n".join(f"{file['filename']} {file['size']}" for file in files) if files else "NOFILES"
         files = [f"FILE {file['filename']} {ip} {file['size']}" for ip, files in data.items() for file in files]
         return "\n".join(files) if files else "NOFILES"
+    # elif command == 'LISTALLFILES':
     
     return "UNKNOWNCOMMAND"
 
