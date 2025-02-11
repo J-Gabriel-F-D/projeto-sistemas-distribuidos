@@ -83,6 +83,9 @@ def process_command(command, args, client_ip, data):
     elif command == 'LISTFILES':
         files = data.get(client_ip, [])
         return "\n".join(f"{file['filename']} {file['size']}" for file in files) if files else "NOFILES"
+    elif command == 'LISTALLFILES':
+        files = [f"FILE {file['filename']} {ip} {file['size']}" for ip, files in data.items() for file in files]
+        return "\n".join(files) if files else "NOFILES"
     
     return "UNKNOWNCOMMAND"
 
