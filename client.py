@@ -52,27 +52,63 @@ def refresh_list(server_ip):
 def search_file(server_ip, filename):
     response = send_request(server_ip, f"SEARCH {filename}\n")
     print(response)
+def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, length=50, fill='█'):
+    if total == 0:
+        total = 1
+
+    percent = f"{100 * (iteration / float(total)):.{decimals}f}"
+    filled_length = int(length * iteration // total)
+    bar = fill * filled_length + '-' * (length - filled_length)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end='', flush=True)
+    if iteration >= total:
+        print() 
 
 def get_file(client_ip, filename, offset_start, offset_end=None):
     try:
         # Verifica se o arquivo existe no servidor antes de tentar baixar
         response = send_request(client_ip, f"SEARCH {filename}\n")
-        if "not found" in response.lower():  # Verifica se o servidor retornou que o arquivo não existe
+        if "not found" in response.lower():
             print(f"[ERROR] File {filename} not found on the server.")
             return
 
-        # Se o arquivo existe, procede com o download
+        # Converter offsets para inteiros
+        int_offset_start = int(offset_start)
+        if offset_end:
+            int_offset_end = int(offset_end)
+            total_bytes = int_offset_end - int_offset_start
+            message = f"GET {filename} {int_offset_start} {int_offset_end}\n"
+        else:
+            # Tenta extrair o tamanho do arquivo a partir da resposta da SEARCH.
+            # Supondo que a resposta esteja no formato: "FOUND <filename> <filesize>"
+            tokens = response.split()
+            if len(tokens) >= 3 and tokens[0].upper() == "FOUND":
+                filesize = int(tokens[2])
+                total_bytes = filesize - int_offset_start
+            else:
+                total_bytes = None
+            message = f"GET {filename} {int_offset_start}\n"
+
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
             client_socket.settimeout(10)  # Timeout para evitar bloqueio
             client_socket.connect((client_ip, CLIENT_PORT))
-            message = f"GET {filename} {offset_start} {offset_end}\n" if offset_end else f"GET {filename} {offset_start}\n"
             client_socket.sendall(message.encode())
+            downloaded = 0
             with open(os.path.join(PUBLIC_FOLDER, filename), 'wb') as file:
                 while True:
                     data = client_socket.recv(1024)
                     if not data:
                         break
                     file.write(data)
+                    downloaded += len(data)
+                    # Se o tamanho total for conhecido, atualiza a barra com porcentagem
+                    if total_bytes:
+                        print_progress_bar(downloaded, total_bytes, prefix="Downloading", suffix="Complete", length=50)
+                    else:
+                        # Caso o total não seja conhecido, mostra apenas os bytes baixados
+                        sys.stdout.write(f"\rDownloading: {downloaded} bytes")
+                        sys.stdout.flush()
+            if not total_bytes:
+                sys.stdout.write("\n")
             print(f"[INFO] File {filename} downloaded successfully.")
     except socket.timeout:
         print(f"[ERROR] Connection timed out while downloading {filename}.")
@@ -82,7 +118,7 @@ def get_file(client_ip, filename, offset_start, offset_end=None):
         print(f"[ERROR] File system error while downloading {filename}: {e}")
     except Exception as e:
         print(f"[ERROR] Unexpected error while downloading {filename}: {e}")
-        
+
 def handle_file_request(client_socket):
     try:
         request = client_socket.recv(1024).decode().split()
@@ -124,7 +160,6 @@ def start_file_server():
 def leave_server(server_ip):
     response = send_request(server_ip, "LEAVE\n")
     print(response)
-
 
 def list_files(server_ip):
     """
