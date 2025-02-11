@@ -13,7 +13,7 @@ if not os.path.exists(PUBLIC_FOLDER):
 def send_request(server_ip, message):
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
-            client_socket.settimeout(10)  # Timeout para evitar bloqueio
+            client_socket.settimeout(10)  
             client_socket.connect((server_ip, SERVER_PORT))
             client_socket.sendall(message.encode())
             response = client_socket.recv(4096).decode()
@@ -65,21 +65,17 @@ def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, lengt
 
 def get_file(client_ip, filename, offset_start, offset_end=None):
     try:
-        # Verifica se o arquivo existe no servidor antes de tentar baixar
         response = send_request(client_ip, f"SEARCH {filename}\n")
         if "not found" in response.lower():
             print(f"[ERROR] File {filename} not found on the server.")
             return
 
-        # Converter offsets para inteiros
         int_offset_start = int(offset_start)
         if offset_end:
             int_offset_end = int(offset_end)
             total_bytes = int_offset_end - int_offset_start
             message = f"GET {filename} {int_offset_start} {int_offset_end}\n"
         else:
-            # Tenta extrair o tamanho do arquivo a partir da resposta da SEARCH.
-            # Supondo que a resposta esteja no formato: "FOUND <filename> <filesize>"
             tokens = response.split()
             if len(tokens) >= 3 and tokens[0].upper() == "FOUND":
                 filesize = int(tokens[2])
@@ -100,11 +96,9 @@ def get_file(client_ip, filename, offset_start, offset_end=None):
                         break
                     file.write(data)
                     downloaded += len(data)
-                    # Se o tamanho total for conhecido, atualiza a barra com porcentagem
                     if total_bytes:
                         print_progress_bar(downloaded, total_bytes, prefix="Downloading", suffix="Complete", length=50)
                     else:
-                        # Caso o total não seja conhecido, mostra apenas os bytes baixados
                         sys.stdout.write(f"\rDownloading: {downloaded} bytes")
                         sys.stdout.flush()
             if not total_bytes:
@@ -162,16 +156,13 @@ def leave_server(server_ip):
     print(response)
 
 def list_files(server_ip):
-    """
-    Solicita ao servidor a lista de arquivos disponíveis e a exibe.
-    """
-    response = send_request(server_ip, "LISTALLFILES\n")
+    response = send_request(server_ip, "LISTFILES\n")
     if response == "NOFILES":
         print("[INFO] No files available on the server.")
     else:
         print("Files available on the server:")
         for line in response.split("\n"):
-            if line:  # Ignora linhas vazias
+            if line: 
                 print(f"- {line}")
 
 def main():
